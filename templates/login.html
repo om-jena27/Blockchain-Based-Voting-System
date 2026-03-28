@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-form" style="text-align: center;">
+    <h2>Secure Login</h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Connect your Ethereum web3 wallet to proceed.</p>
+    
+    <button id="connect-wallet" class="btn btn-block" style="background: linear-gradient(135deg, #f6851b, #f56d0a); font-size: 1.1rem; padding: 1rem;">
+        🦊 Connect MetaMask
+    </button>
+    
+    <p id="wallet-error" style="color: var(--danger); margin-top: 1rem; display: none;"></p>
+</div>
+<script>
+    // Aggressively clear MetaMask on load so it always prompts
+    if (typeof window.ethereum !== 'undefined') {
+        window.ethereum.request({
+            method: 'wallet_revokePermissions',
+            params: [{ eth_accounts: {} }]
+        }).catch(err => console.log("MetaMask not connected yet or revoke not supported:", err));
+    }
+
+document.getElementById('connect-wallet').addEventListener('click', async () => {
+    const errorEl = document.getElementById('wallet-error');
+    errorEl.style.display = 'none';
+    
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            // This is the definitive way to force the MetaMask selection popup
+            // It clears the cached connection and prompts the user again
+            await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{ eth_accounts: {} }]
+            });
+            
+            // Get the newly selected account
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const account = accounts[0];
+            
+            // Send to backend
+            const response = await fetch('/auth/metamask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ wallet_address: account })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                window.location.href = data.redirect;
+            } else {
+                errorEl.textContent = data.error || 'Authentication failed.';
+                errorEl.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error connecting to MetaMask', error);
+            errorEl.textContent = 'Failed to connect. Please unlock MetaMask and try again.';
+            errorEl.style.display = 'block';
+        }
+    } else {
+        errorEl.textContent = 'MetaMask is not installed. Please install it to participate.';
+        errorEl.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

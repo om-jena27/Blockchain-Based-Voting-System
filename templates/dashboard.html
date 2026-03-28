@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="card">
+        <h2>Live Candidates</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Select a candidate to cast your secure vote.</p>
+        
+        {% if election_start and now < election_start %}
+            <div class="valid-status false" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3);">
+                ⏳ Voting has not started. Election begins at: <strong style="margin-left: 5px;">{{ election_start.replace('T', ' ')[:16] }}</strong>
+            </div>
+            <p>Please check back once the election is active.</p>
+        {% elif election_end and now > election_end %}
+            <div class="valid-status false" style="background: rgba(100, 116, 139, 0.2); color: var(--text-muted); border-color: rgba(100, 116, 139, 0.5);">
+                🛑 Voting is officially closed. Final results are displayed below.
+            </div>
+        {% else %}
+            {% if session.get('has_voted') %}
+                <div class="valid-status true">
+                    ✅ You have successfully cast your vote.
+                </div>
+                <p>Thank you for participating! Review the live results below.</p>
+            {% else %}
+                {% if candidates %}
+                    <div class="candidate-list">
+                        {% for candidate in candidates %}
+                            <div class="candidate-item">
+                                <span style="font-weight: 600; font-size: 1.1rem;">{{ candidate.name }}</span>
+                                <button class="btn" onclick="castVote({{ candidate.id }})">Cast Vote</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No candidates available yet. Please check back later.</p>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="card" id="election-metrics">
+        <h2>Election Metrics</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Secure turnout metrics and election progress.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; background: rgba(16, 185, 129, 0.05); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <div style="font-size: 4rem; font-weight: 800; color: var(--success); line-height: 1;" id="total-turnout-count">{{ total_votes }}</div>
+                <div style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Total Votes Cast</div>
+            </div>
+            
+            {% if election_end %}
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; background: rgba(59, 130, 246, 0.05); border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <div style="font-size: 2.5rem; font-weight: 700; color: #60a5fa; line-height: 1;" id="countdown-timer">--:--:--</div>
+                <div style="color: var(--text-muted); font-size: 1rem; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Time Remaining</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if election_end %}
+<script>
+    window.electionEndTime = "{{ election_end }}";
+</script>
+{% endif %}
+{% endblock %}

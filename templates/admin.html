@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-grid" style="grid-template-columns: 1fr;">
+    <div class="card">
+        <h2>Admin Controls</h2>
+        
+        <div class="valid-status {{ 'true' if is_valid else 'false' }}">
+            Blockchain Status: {{ "✅ Valid and Secure" if is_valid else "❌ Integrity Compromised" }}
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <h3>Add Candidate</h3>
+            <form method="POST" action="{{ url_for('add_candidate') }}" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <input type="text" name="name" required placeholder="Candidate Name" style="padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; flex-grow: 1;">
+                <button type="submit" class="btn btn-success">Add</button>
+            </form>
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <h3>Election Timers</h3>
+            <form method="POST" action="{{ url_for('update_settings') }}" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Start Time (Leave blank to keep current)</label>
+                    <input type="datetime-local" name="election_start" style="padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; width: 100%;">
+                    {% if election_start %}
+                        <small style="color: var(--accent); display: block; margin-top:0.25rem;">Current Start: {{ election_start.replace('T', ' ')[:16] }}</small>
+                    {% endif %}
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">End Time (Leave blank to keep current)</label>
+                    <input type="datetime-local" name="election_end" style="padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; width: 100%;">
+                    {% if election_end %}
+                        <small style="color: var(--accent); display: block; margin-top:0.25rem;">Current End: {{ election_end.replace('T', ' ')[:16] }}</small>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary" style="align-self: flex-start;">Save Timers</button>
+            </form>
+        </div>
+
+        <div style="margin-top: 2rem;">
+            <h3>Manage Candidates</h3>
+            <div class="candidate-list" style="margin-top: 1rem;">
+                {% for candidate in candidates %}
+                    <div class="candidate-item">
+                        <span style="font-weight: 600;">{{ candidate.name }}</span>
+                        <form method="POST" action="{{ url_for('delete_candidate', candidate_id=candidate.id) }}" onsubmit="return confirm('Are you sure you want to delete {{ candidate.name }}? This will not remove their historic votes from the blockchain.');">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Delete</button>
+                        </form>
+                    </div>
+                {% endfor %}
+                {% if not candidates %}
+                    <p style="color: var(--text-muted);">No candidates currently exist.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Blockchain Ledger</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Immutable record of all transactions.</p>
+        
+        <div class="blockchain-list">
+            {% for block in chain %}
+                <div class="block-item">
+                    <div style="font-weight: bold; color: var(--accent); margin-bottom: 0.25rem;">Block #{{ block.index }}</div>
+                    <div><strong>Timestamp:</strong> {{ block.timestamp }}</div>
+                    <div><strong>Voter Hash:</strong> {{ block.voter_id_hash }}</div>
+                    <div><strong>Candidate ID:</strong> {{ block.candidate_id }}</div>
+                    <div style="margin-top: 0.5rem; word-break: break-all;">
+                        <strong>Previous Hash:</strong> <span style="color: var(--text-muted);">{{ block.previous_hash }}</span><br>
+                        <strong>Block Hash:</strong> <span style="color: var(--success);">{{ block.hash }}</span><br>
+                        <strong>Eth TX:</strong> 
+                        {% if block.eth_tx_hash and block.eth_tx_hash != 'N/A' %}
+                            <a href="https://sepolia.etherscan.io/tx/{{ block.eth_tx_hash }}" target="_blank" style="color: var(--primary); text-decoration: underline;">{{ block.eth_tx_hash[:18] }}...</a>
+                        {% else %}
+                            <span style="color: var(--text-muted);">N/A</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            {% if not chain %}
+                <p>No blocks found in the chain.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

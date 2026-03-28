@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-form">
+    <h2>Voter Registration</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label>Choose a Voter ID</label>
+            <input type="text" name="voter_id" required placeholder="e.g. VOTE-001">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-block btn-success">Register Securely</button>
+    </form>
+    <p style="text-align: center; margin-top: 1rem; font-size: 0.9em; color: var(--text-muted)">
+        Already registered? <a href="{{ url_for('login') }}" style="color: var(--accent)">Login here</a>
+    </p>
+</div>
+{% endblock %}
